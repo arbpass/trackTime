@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>00:00:00 — Stopwatch</title>
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      min-height: 100vh;
+      background: #ffffff;
+      color: #111111;
+      font-family: 'Courier New', Courier, monospace;
+      overflow-x: hidden;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      body { background: #0f0f0f; color: #eeeeee; }
+    }
+
+    /* ── Main stopwatch area ── */
+    #sw {
+      width: 100%;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      padding: 1rem;
+    }
+
+    #time {
+      font-size: clamp(3rem, 16vw, 12rem);
+      font-weight: 400;
+      letter-spacing: -0.02em;
+      line-height: 1;
+      text-align: center;
+      width: 100%;
+      white-space: nowrap;
+    }
+
+    #controls {
+      display: flex;
+      gap: 16px;
+      margin-top: 2.5rem;
+    }
+
+    .btn {
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 500;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 10px 28px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.15s, transform 0.1s, opacity 0.15s;
+      min-width: 100px;
+    }
+    .btn:active { transform: scale(0.97); }
+
+    .btn.primary {
+      background: #111111;
+      color: #ffffff;
+      border: 1px solid #111111;
+    }
+    .btn.primary:hover { opacity: 0.75; }
+
+    .btn.secondary {
+      background: transparent;
+      color: #111111;
+      border: 1.5px solid #111111;
+    }
+    .btn.secondary:hover { background: rgba(0,0,0,0.06); }
+
+    .btn.ghost {
+      background: transparent;
+      color: #888;
+      border: 1.5px solid #cccccc;
+      min-width: auto;
+      padding: 5px 14px;
+      font-size: 11px;
+    }
+    .btn.ghost:hover { background: rgba(0,0,0,0.04); color: #111; }
+
+    @media (prefers-color-scheme: dark) {
+      .btn.primary { background: #eeeeee; color: #0f0f0f; border-color: #eeeeee; }
+      .btn.primary:hover { opacity: 0.8; }
+      .btn.secondary { color: #eeeeee; border-color: #eeeeee; }
+      .btn.secondary:hover { background: rgba(255,255,255,0.08); }
+      .btn.ghost { color: #666; border-color: #333; }
+      .btn.ghost:hover { background: rgba(255,255,255,0.05); color: #eee; }
+    }
+
+    #status {
+      position: fixed;
+      top: 1.5rem;
+      right: 1.5rem;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: rgba(0,0,0,0.15);
+      transition: background 0.3s;
+    }
+    @media (prefers-color-scheme: dark) {
+      #status { background: rgba(255,255,255,0.15); }
+    }
+    #status.running { background: #1D9E75; }
+
+    #hint {
+      position: fixed;
+      bottom: 1.5rem;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 12px;
+      letter-spacing: 0.06em;
+      color: #aaaaaa;
+      white-space: nowrap;
+    }
+
+    /* ── History panel ── */
+    #history-section {
+      display: none;
+      width: 100%;
+      max-width: 700px;
+      margin: 0 auto;
+      padding: 0 1.5rem 5rem;
+    }
+    #history-section.visible { display: block; }
+
+    .history-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-top: 1px solid rgba(0,0,0,0.1);
+      padding-top: 2rem;
+      margin-bottom: 1rem;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      .history-header { border-color: rgba(255,255,255,0.1); }
+    }
+
+    .history-title {
+      font-size: 11px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: #888;
+    }
+
+    /* Total row */
+    #total-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.75rem 0;
+      border-bottom: 1px solid rgba(0,0,0,0.08);
+      margin-bottom: 0.5rem;
+    }
+    @media (prefers-color-scheme: dark) {
+      #total-row { border-color: rgba(255,255,255,0.08); }
+    }
+    .total-label {
+      font-size: 12px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #888;
+    }
+    #total-time {
+      font-size: clamp(1.2rem, 3vw, 1.8rem);
+      font-weight: 400;
+      letter-spacing: -0.01em;
+    }
+    .total-right {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    /* Run rows */
+    .run-row {
+      display: grid;
+      grid-template-columns: 2rem 1fr auto auto;
+      gap: 0 1.5rem;
+      align-items: center;
+      padding: 0.6rem 0;
+      border-bottom: 1px solid rgba(0,0,0,0.05);
+      font-size: clamp(0.8rem, 2vw, 1rem);
+      animation: fadeIn 0.25s ease;
+    }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; } }
+    @media (prefers-color-scheme: dark) {
+      .run-row { border-color: rgba(255,255,255,0.05); }
+    }
+
+    .run-index { color: #aaa; font-size: 11px; text-align: right; }
+    .run-range { color: #888; font-size: 0.85em; }
+    .run-duration {
+      font-size: clamp(0.9rem, 2.5vw, 1.15rem);
+      text-align: right;
+      white-space: nowrap;
+    }
+    .run-duration-label { font-size: 0.7em; color: #aaa; text-align: right; }
+  </style>
+</head>
+<body>
+  <div id="sw">
+    <div id="status"></div>
+    <div id="time">00:00:00</div>
+    <div id="controls">
+      <button class="btn primary" id="startStop">Start</button>
+      <button class="btn secondary" id="reset">Reset</button>
+    </div>
+    <div id="hint">space — start / pause &nbsp;&nbsp; r — reset</div>
+  </div>
+
+  <!-- History -->
+  <div id="history-section">
+    <div class="history-header">
+      <span class="history-title">Run History</span>
+    </div>
+
+    <!-- Total -->
+    <div id="total-row">
+      <span class="total-label">Total Runtime</span>
+      <div class="total-right">
+        <div id="total-time">00:00:00</div>
+        <button class="btn ghost" id="clearAll">Clear all</button>
+      </div>
+    </div>
+
+    <!-- Rows injected here -->
+    <div id="run-list"></div>
+  </div>
+
+  <script>
+    let running = false, startTime = 0, elapsed = 0, interval = null;
+    let runs = [];   // { start: Date, end: Date, ms: number }
+
+    const timeEl        = document.getElementById('time');
+    const startStopBtn  = document.getElementById('startStop');
+    const resetBtn      = document.getElementById('reset');
+    const statusDot     = document.getElementById('status');
+    const historySection= document.getElementById('history-section');
+    const runList       = document.getElementById('run-list');
+    const totalTimeEl   = document.getElementById('total-time');
+    const clearAllBtn   = document.getElementById('clearAll');
+
+    const pad  = n => String(n).padStart(2, '0');
+
+    function fmt(ms) {
+      const total = Math.floor(ms / 1000);
+      return `${pad(Math.floor(total/3600))}:${pad(Math.floor(total/60)%60)}:${pad(total%60)}`;
+    }
+
+    function fmtTime(date) {
+      return `${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
+    }
+
+    function fmtDate(date) {
+      return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+    }
+
+    function update() {
+      elapsed = Date.now() - startTime;
+      const t = fmt(elapsed);
+      timeEl.textContent = t;
+      document.title     = t + ' — Stopwatch';
+    }
+
+    function renderHistory() {
+      if (runs.length === 0) {
+        historySection.classList.remove('visible');
+        return;
+      }
+      historySection.classList.add('visible');
+
+      // Total
+      const totalMs = runs.reduce((s, r) => s + r.ms, 0);
+      totalTimeEl.textContent = fmt(totalMs);
+
+      // Rows (newest first)
+      runList.innerHTML = '';
+      [...runs].reverse().forEach((r, i) => {
+        const idx = runs.length - i;
+        const row = document.createElement('div');
+        row.className = 'run-row';
+
+        const startStr = fmtDate(r.start) + ' ' + fmtTime(r.start);
+        const endStr   = fmtTime(r.end);
+
+        row.innerHTML = `
+          <span class="run-index">#${idx}</span>
+          <span class="run-range">${startStr} → ${endStr}</span>
+          <div>
+            <div class="run-duration">${fmt(r.ms)}</div>
+          </div>
+        `;
+        runList.appendChild(row);
+      });
+    }
+
+    startStopBtn.addEventListener('click', () => {
+      if (!running) {
+        if (elapsed === 0) startTime = Date.now();
+        else startTime = Date.now() - elapsed;
+        running = true;
+        startStopBtn.textContent = 'Pause';
+        statusDot.classList.add('running');
+        interval = setInterval(update, 500);
+        update();
+      } else {
+        running = false;
+        clearInterval(interval);
+        startStopBtn.textContent = 'Resume';
+        statusDot.classList.remove('running');
+      }
+    });
+
+    resetBtn.addEventListener('click', () => {
+      if (elapsed === 0) return; // nothing to record
+
+      // Record the run
+      const endDate   = new Date();
+      const startDate = new Date(endDate.getTime() - elapsed);
+      runs.push({ start: startDate, end: endDate, ms: elapsed });
+
+      // Reset stopwatch
+      running = false;
+      clearInterval(interval);
+      elapsed = 0;
+      timeEl.textContent       = '00:00:00';
+      startStopBtn.textContent = 'Start';
+      statusDot.classList.remove('running');
+      document.title           = '00:00:00 — Stopwatch';
+
+      renderHistory();
+    });
+
+    clearAllBtn.addEventListener('click', () => {
+      runs = [];
+      renderHistory();
+    });
+
+    document.addEventListener('keydown', e => {
+      if (e.code === 'Space') { e.preventDefault(); startStopBtn.click(); }
+      if (e.code === 'KeyR')  resetBtn.click();
+    });
+  </script>
+</body>
+</html>
