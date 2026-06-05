@@ -19,7 +19,6 @@
       body { background: #0f0f0f; color: #eeeeee; }
     }
 
-    /* ── Main stopwatch area ── */
     #sw {
       width: 100%;
       min-height: 100vh;
@@ -122,13 +121,11 @@
 
     /* ── History panel ── */
     #history-section {
-      display: none;
       width: 100%;
       max-width: 700px;
       margin: 0 auto;
       padding: 0 1.5rem 5rem;
     }
-    #history-section.visible { display: block; }
 
     .history-header {
       display: flex;
@@ -138,7 +135,6 @@
       padding-top: 2rem;
       margin-bottom: 1rem;
     }
-
     @media (prefers-color-scheme: dark) {
       .history-header { border-color: rgba(255,255,255,0.1); }
     }
@@ -150,7 +146,6 @@
       color: #888;
     }
 
-    /* Total row */
     #total-row {
       display: flex;
       align-items: center;
@@ -162,27 +157,29 @@
     @media (prefers-color-scheme: dark) {
       #total-row { border-color: rgba(255,255,255,0.08); }
     }
+
     .total-label {
       font-size: 12px;
       letter-spacing: 0.08em;
       text-transform: uppercase;
       color: #888;
     }
+
     #total-time {
       font-size: clamp(1.2rem, 3vw, 1.8rem);
       font-weight: 400;
       letter-spacing: -0.01em;
     }
+
     .total-right {
       display: flex;
       align-items: center;
       gap: 14px;
     }
 
-    /* Run rows */
     .run-row {
       display: grid;
-      grid-template-columns: 2rem 1fr auto auto;
+      grid-template-columns: 2rem 1fr auto;
       gap: 0 1.5rem;
       align-items: center;
       padding: 0.6rem 0;
@@ -197,12 +194,15 @@
 
     .run-index { color: #aaa; font-size: 11px; text-align: right; }
     .run-range { color: #888; font-size: 0.85em; }
-    .run-duration {
-      font-size: clamp(0.9rem, 2.5vw, 1.15rem);
-      text-align: right;
-      white-space: nowrap;
+    .run-duration { font-size: clamp(0.9rem, 2.5vw, 1.15rem); text-align: right; white-space: nowrap; }
+
+    #empty-msg {
+      display: none;
+      font-size: 13px;
+      color: #aaa;
+      letter-spacing: 0.05em;
+      padding: 1.2rem 0 0.5rem;
     }
-    .run-duration-label { font-size: 0.7em; color: #aaa; text-align: right; }
   </style>
 </head>
 <body>
@@ -216,13 +216,10 @@
     <div id="hint">space — start / pause &nbsp;&nbsp; r — reset</div>
   </div>
 
-  <!-- History -->
   <div id="history-section">
     <div class="history-header">
       <span class="history-title">Run History</span>
     </div>
-
-    <!-- Total -->
     <div id="total-row">
       <span class="total-label">Total Runtime</span>
       <div class="total-right">
@@ -230,29 +227,31 @@
         <button class="btn ghost" id="clearAll">Clear all</button>
       </div>
     </div>
-
-    <!-- Rows injected here -->
     <div id="run-list"></div>
+    <div id="empty-msg">No data to show.</div>
   </div>
 
   <script>
+    const STORAGE_KEY = 'stopwatch_runs';
+
     let running = false, startTime = 0, elapsed = 0, interval = null;
-    let runs = [];   // { start: Date, end: Date, ms: number }
+    let runs = loadRuns();
 
-    const timeEl        = document.getElementById('time');
-    const startStopBtn  = document.getElementById('startStop');
-    const resetBtn      = document.getElementById('reset');
-    const statusDot     = document.getElementById('status');
-    const historySection= document.getElementById('history-section');
-    const runList       = document.getElementById('run-list');
-    const totalTimeEl   = document.getElementById('total-time');
-    const clearAllBtn   = document.getElementById('clearAll');
+    const timeEl         = document.getElementById('time');
+    const startStopBtn   = document.getElementById('startStop');
+    const resetBtn       = document.getElementById('reset');
+    const statusDot      = document.getElementById('status');
+    const runList        = document.getElementById('run-list');
+    const totalTimeEl    = document.getElementById('total-time');
+    const clearAllBtn    = document.getElementById('clearAll');
+    const emptyMsg       = document.getElementById('empty-msg');
+    const totalRow       = document.getElementById('total-row');
 
-    const pad  = n => String(n).padStart(2, '0');
+    const pad = n => String(n).padStart(2, '0');
 
     function fmt(ms) {
       const total = Math.floor(ms / 1000);
-      return `${pad(Math.floor(total/3600))}:${pad(Math.floor(total/60)%60)}:${pad(total%60)}`;
+      return `${pad(Math.floor(total / 3600))}:${pad(Math.floor(total / 60) % 60)}:${pad(total % 60)}`;
     }
 
     function fmtTime(date) {
@@ -263,6 +262,57 @@
       return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
     }
 
+    // ── localStorage helpers ──
+    function loadRuns() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return [];
+        return JSON.parse(raw).map(r => ({
+          ...r,
+          start: new Date(r.start),
+          end:   new Date(r.end)
+        }));
+      } catch { return []; }
+    }
+
+    function saveRuns() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(runs));
+      } catch (e) {
+        console.warn('localStorage unavailable:', e);
+      }
+    }
+
+    // ── Render ──
+    function renderHistory() {
+      runList.innerHTML = '';
+
+      if (runs.length === 0) {
+        totalRow.style.display = 'none';
+        emptyMsg.style.display = 'block';
+        return;
+      }
+
+      totalRow.style.display = '';
+      emptyMsg.style.display = 'none';
+
+      const totalMs = runs.reduce((s, r) => s + r.ms, 0);
+      totalTimeEl.textContent = fmt(totalMs);
+
+      [...runs].reverse().forEach((r, i) => {
+        const idx = runs.length - i;
+        const row = document.createElement('div');
+        row.className = 'run-row';
+        row.innerHTML = `
+          <span class="run-index">#${idx}</span>
+          <span class="run-range">${fmtDate(r.start)} ${fmtTime(r.start)} → ${fmtTime(r.end)}</span>
+          <span class="run-duration">${fmt(r.ms)}</span>
+        `;
+        runList.appendChild(row);
+      });
+    }
+
+    // ── Timer ──
     function update() {
       elapsed = Date.now() - startTime;
       const t = fmt(elapsed);
@@ -270,43 +320,10 @@
       document.title     = t + ' — Stopwatch';
     }
 
-    function renderHistory() {
-      if (runs.length === 0) {
-        historySection.classList.remove('visible');
-        return;
-      }
-      historySection.classList.add('visible');
-
-      // Total
-      const totalMs = runs.reduce((s, r) => s + r.ms, 0);
-      totalTimeEl.textContent = fmt(totalMs);
-
-      // Rows (newest first)
-      runList.innerHTML = '';
-      [...runs].reverse().forEach((r, i) => {
-        const idx = runs.length - i;
-        const row = document.createElement('div');
-        row.className = 'run-row';
-
-        const startStr = fmtDate(r.start) + ' ' + fmtTime(r.start);
-        const endStr   = fmtTime(r.end);
-
-        row.innerHTML = `
-          <span class="run-index">#${idx}</span>
-          <span class="run-range">${startStr} → ${endStr}</span>
-          <div>
-            <div class="run-duration">${fmt(r.ms)}</div>
-          </div>
-        `;
-        runList.appendChild(row);
-      });
-    }
-
     startStopBtn.addEventListener('click', () => {
       if (!running) {
-        if (elapsed === 0) startTime = Date.now();
-        else startTime = Date.now() - elapsed;
-        running = true;
+        startTime = Date.now() - elapsed;
+        running   = true;
         startStopBtn.textContent = 'Pause';
         statusDot.classList.add('running');
         interval = setInterval(update, 500);
@@ -320,14 +337,13 @@
     });
 
     resetBtn.addEventListener('click', () => {
-      if (elapsed === 0) return; // nothing to record
+      if (elapsed === 0) return;
 
-      // Record the run
       const endDate   = new Date();
       const startDate = new Date(endDate.getTime() - elapsed);
       runs.push({ start: startDate, end: endDate, ms: elapsed });
+      saveRuns();
 
-      // Reset stopwatch
       running = false;
       clearInterval(interval);
       elapsed = 0;
@@ -341,6 +357,7 @@
 
     clearAllBtn.addEventListener('click', () => {
       runs = [];
+      saveRuns();
       renderHistory();
     });
 
@@ -348,6 +365,9 @@
       if (e.code === 'Space') { e.preventDefault(); startStopBtn.click(); }
       if (e.code === 'KeyR')  resetBtn.click();
     });
+
+    // Init
+    renderHistory();
   </script>
 </body>
 </html>
