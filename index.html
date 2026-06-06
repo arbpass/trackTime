@@ -4,6 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>00:00:00 — Stopwatch</title>
+  <link rel="icon" href="https://www.svgrepo.com/show/520498/clock.svg" type="image/x-icon" />
+
   <style>
     *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -14,7 +16,6 @@
       font-family: 'Courier New', Courier, monospace;
       overflow-x: hidden;
     }
-
     @media (prefers-color-scheme: dark) {
       body { background: #0f0f0f; color: #eeeeee; }
     }
@@ -40,11 +41,7 @@
       white-space: nowrap;
     }
 
-    #controls {
-      display: flex;
-      gap: 16px;
-      margin-top: 2.5rem;
-    }
+    #controls { display: flex; gap: 16px; margin-top: 2.5rem; }
 
     .btn {
       font-family: inherit;
@@ -60,28 +57,11 @@
     }
     .btn:active { transform: scale(0.97); }
 
-    .btn.primary {
-      background: #111111;
-      color: #ffffff;
-      border: 1px solid #111111;
-    }
+    .btn.primary { background: #111111; color: #ffffff; border: 1px solid #111111; }
     .btn.primary:hover { opacity: 0.75; }
-
-    .btn.secondary {
-      background: transparent;
-      color: #111111;
-      border: 1.5px solid #111111;
-    }
+    .btn.secondary { background: transparent; color: #111111; border: 1.5px solid #111111; }
     .btn.secondary:hover { background: rgba(0,0,0,0.06); }
-
-    .btn.ghost {
-      background: transparent;
-      color: #888;
-      border: 1.5px solid #cccccc;
-      min-width: auto;
-      padding: 5px 14px;
-      font-size: 11px;
-    }
+    .btn.ghost { background: transparent; color: #888; border: 1.5px solid #cccccc; min-width: auto; padding: 5px 14px; font-size: 11px; }
     .btn.ghost:hover { background: rgba(0,0,0,0.04); color: #111; }
 
     @media (prefers-color-scheme: dark) {
@@ -94,118 +74,58 @@
     }
 
     #status {
-      position: fixed;
-      top: 1.5rem;
-      right: 1.5rem;
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: rgba(0,0,0,0.15);
-      transition: background 0.3s;
+      position: fixed; top: 1.5rem; right: 1.5rem;
+      width: 8px; height: 8px; border-radius: 50%;
+      background: rgba(0,0,0,0.15); transition: background 0.3s;
     }
-    @media (prefers-color-scheme: dark) {
-      #status { background: rgba(255,255,255,0.15); }
-    }
+    @media (prefers-color-scheme: dark) { #status { background: rgba(255,255,255,0.15); } }
     #status.running { background: #1D9E75; }
 
     #hint {
-      position: fixed;
-      bottom: 1.5rem;
-      left: 50%;
-      transform: translateX(-50%);
-      font-size: 12px;
-      letter-spacing: 0.06em;
-      color: #aaaaaa;
-      white-space: nowrap;
+      position: fixed; bottom: 1.5rem; left: 50%; transform: translateX(-50%);
+      font-size: 12px; letter-spacing: 0.06em; color: #aaaaaa; white-space: nowrap;
     }
 
-    /* ── History panel ── */
-    #history-section {
-      width: 100%;
-      max-width: 700px;
-      margin: 0 auto;
-      padding: 0 1.5rem 5rem;
-    }
+    /* ── History ── */
+    #history-section { width: 100%; max-width: 700px; margin: 0 auto; padding: 0 1.5rem 5rem; }
 
     .history-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      border-top: 1px solid rgba(0,0,0,0.1);
-      padding-top: 2rem;
-      margin-bottom: 1rem;
+      display: flex; align-items: center; justify-content: space-between;
+      border-top: 1px solid rgba(0,0,0,0.1); padding-top: 2rem; margin-bottom: 1rem;
     }
-    @media (prefers-color-scheme: dark) {
-      .history-header { border-color: rgba(255,255,255,0.1); }
-    }
+    @media (prefers-color-scheme: dark) { .history-header { border-color: rgba(255,255,255,0.1); } }
 
-    .history-title {
-      font-size: 11px;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-      color: #888;
-    }
+    .history-title { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: #888; }
 
     #total-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 0.75rem 0;
-      border-bottom: 1px solid rgba(0,0,0,0.08);
-      margin-bottom: 0.5rem;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0.75rem 0; border-bottom: 1px solid rgba(0,0,0,0.08); margin-bottom: 0.5rem;
     }
-    @media (prefers-color-scheme: dark) {
-      #total-row { border-color: rgba(255,255,255,0.08); }
-    }
+    @media (prefers-color-scheme: dark) { #total-row { border-color: rgba(255,255,255,0.08); } }
 
-    .total-label {
-      font-size: 12px;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      color: #888;
-    }
-
-    #total-time {
-      font-size: clamp(1.2rem, 3vw, 1.8rem);
-      font-weight: 400;
-      letter-spacing: -0.01em;
-    }
-
-    .total-right {
-      display: flex;
-      align-items: center;
-      gap: 14px;
-    }
+    .total-label { font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: #888; }
+    #total-time { font-size: clamp(1.2rem, 3vw, 1.8rem); font-weight: 400; letter-spacing: -0.01em; }
+    .total-right { display: flex; align-items: center; gap: 14px; }
 
     .run-row {
-      display: grid;
-      grid-template-columns: 2rem 1fr auto;
-      gap: 0 1.5rem;
-      align-items: center;
-      padding: 0.6rem 0;
+      display: grid; grid-template-columns: 2rem 1fr auto;
+      gap: 0 1.5rem; align-items: center; padding: 0.6rem 0;
       border-bottom: 1px solid rgba(0,0,0,0.05);
       font-size: clamp(0.8rem, 2vw, 1rem);
       animation: fadeIn 0.25s ease;
     }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; } }
-    @media (prefers-color-scheme: dark) {
-      .run-row { border-color: rgba(255,255,255,0.05); }
-    }
+    @media (prefers-color-scheme: dark) { .run-row { border-color: rgba(255,255,255,0.05); } }
 
     .run-index { color: #aaa; font-size: 11px; text-align: right; }
     .run-range { color: #888; font-size: 0.85em; }
     .run-duration { font-size: clamp(0.9rem, 2.5vw, 1.15rem); text-align: right; white-space: nowrap; }
 
-    #empty-msg {
-      display: none;
-      font-size: 13px;
-      color: #aaa;
-      letter-spacing: 0.05em;
-      padding: 1.2rem 0 0.5rem;
-    }
+    #empty-msg { display: none; font-size: 13px; color: #aaa; letter-spacing: 0.05em; padding: 1.2rem 0 0.5rem; }
   </style>
 </head>
 <body>
+
   <div id="sw">
     <div id="status"></div>
     <div id="time">00:00:00</div>
@@ -237,87 +157,64 @@
     let running = false, startTime = 0, elapsed = 0, interval = null;
     let runs = loadRuns();
 
-    const timeEl         = document.getElementById('time');
-    const startStopBtn   = document.getElementById('startStop');
-    const resetBtn       = document.getElementById('reset');
-    const statusDot      = document.getElementById('status');
-    const runList        = document.getElementById('run-list');
-    const totalTimeEl    = document.getElementById('total-time');
-    const clearAllBtn    = document.getElementById('clearAll');
-    const emptyMsg       = document.getElementById('empty-msg');
-    const totalRow       = document.getElementById('total-row');
+    const timeEl       = document.getElementById('time');
+    const startStopBtn = document.getElementById('startStop');
+    const resetBtn     = document.getElementById('reset');
+    const statusDot    = document.getElementById('status');
+    const runList      = document.getElementById('run-list');
+    const totalTimeEl  = document.getElementById('total-time');
+    const clearAllBtn  = document.getElementById('clearAll');
+    const emptyMsg     = document.getElementById('empty-msg');
+    const totalRow     = document.getElementById('total-row');
 
     const pad = n => String(n).padStart(2, '0');
 
     function fmt(ms) {
-      const total = Math.floor(ms / 1000);
-      return `${pad(Math.floor(total / 3600))}:${pad(Math.floor(total / 60) % 60)}:${pad(total % 60)}`;
+      const t = Math.floor(ms / 1000);
+      return `${pad(Math.floor(t/3600))}:${pad(Math.floor(t/60)%60)}:${pad(t%60)}`;
     }
+    function fmtTime(d) { return `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`; }
+    function fmtDate(d) { return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }); }
 
-    function fmtTime(date) {
-      return `${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
-    }
-
-    function fmtDate(date) {
-      return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
-    }
-
-    // ── localStorage helpers ──
     function loadRuns() {
       try {
         const raw = localStorage.getItem(STORAGE_KEY);
         if (!raw) return [];
-        return JSON.parse(raw).map(r => ({
-          ...r,
-          start: new Date(r.start),
-          end:   new Date(r.end)
-        }));
+        return JSON.parse(raw).map(r => ({ ...r, start: new Date(r.start), end: new Date(r.end) }));
       } catch { return []; }
     }
 
     function saveRuns() {
-      try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(runs));
-      } catch (e) {
-        console.warn('localStorage unavailable:', e);
-      }
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(runs)); }
+      catch(e) { console.warn('localStorage unavailable:', e); }
     }
 
-    // ── Render ──
     function renderHistory() {
       runList.innerHTML = '';
-
       if (runs.length === 0) {
         totalRow.style.display = 'none';
         emptyMsg.style.display = 'block';
         return;
       }
-
       totalRow.style.display = '';
       emptyMsg.style.display = 'none';
-
-      const totalMs = runs.reduce((s, r) => s + r.ms, 0);
-      totalTimeEl.textContent = fmt(totalMs);
-
+      totalTimeEl.textContent = fmt(runs.reduce((s, r) => s + r.ms, 0));
       [...runs].reverse().forEach((r, i) => {
-        const idx = runs.length - i;
         const row = document.createElement('div');
         row.className = 'run-row';
         row.innerHTML = `
-          <span class="run-index">#${idx}</span>
+          <span class="run-index">#${runs.length - i}</span>
           <span class="run-range">${fmtDate(r.start)} ${fmtTime(r.start)} → ${fmtTime(r.end)}</span>
-          <span class="run-duration">${fmt(r.ms)}</span>
-        `;
+          <span class="run-duration">${fmt(r.ms)}</span>`;
         runList.appendChild(row);
       });
     }
 
-    // ── Timer ──
     function update() {
       elapsed = Date.now() - startTime;
       const t = fmt(elapsed);
       timeEl.textContent = t;
-      document.title     = t + ' — Stopwatch';
+      document.title = t + ' — Stopwatch';
     }
 
     startStopBtn.addEventListener('click', () => {
@@ -338,12 +235,10 @@
 
     resetBtn.addEventListener('click', () => {
       if (elapsed === 0) return;
-
       const endDate   = new Date();
       const startDate = new Date(endDate.getTime() - elapsed);
       runs.push({ start: startDate, end: endDate, ms: elapsed });
       saveRuns();
-
       running = false;
       clearInterval(interval);
       elapsed = 0;
@@ -351,7 +246,6 @@
       startStopBtn.textContent = 'Start';
       statusDot.classList.remove('running');
       document.title           = '00:00:00 — Stopwatch';
-
       renderHistory();
     });
 
@@ -361,12 +255,19 @@
       renderHistory();
     });
 
+    // Native browser close warning — only fires when stopwatch is running
+    window.addEventListener('beforeunload', e => {
+      if (running) {
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    });
+
     document.addEventListener('keydown', e => {
       if (e.code === 'Space') { e.preventDefault(); startStopBtn.click(); }
       if (e.code === 'KeyR')  resetBtn.click();
     });
 
-    // Init
     renderHistory();
   </script>
 </body>
