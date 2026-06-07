@@ -4,8 +4,6 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>00:00:00 — Stopwatch</title>
-  <link rel="icon" href="https://www.svgrepo.com/show/520498/clock.svg" type="image/x-icon" />
-
   <style>
     *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -63,6 +61,8 @@
     .btn.secondary:hover { background: rgba(0,0,0,0.06); }
     .btn.ghost { background: transparent; color: #888; border: 1.5px solid #cccccc; min-width: auto; padding: 5px 14px; font-size: 11px; }
     .btn.ghost:hover { background: rgba(0,0,0,0.04); color: #111; }
+    .btn.add { background: #111111; color: #fff; border: 1px solid #111111; min-width: auto; padding: 8px 20px; font-size: 12px; }
+    .btn.add:hover { opacity: 0.75; }
 
     @media (prefers-color-scheme: dark) {
       .btn.primary { background: #eeeeee; color: #0f0f0f; border-color: #eeeeee; }
@@ -71,7 +71,23 @@
       .btn.secondary:hover { background: rgba(255,255,255,0.08); }
       .btn.ghost { color: #666; border-color: #333; }
       .btn.ghost:hover { background: rgba(255,255,255,0.05); color: #eee; }
+      .btn.add { background: #eeeeee; color: #0f0f0f; border-color: #eeeeee; }
     }
+
+    /* delete row btn */
+    .btn-del {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: #ccc;
+      font-size: 15px;
+      line-height: 1;
+      padding: 2px 4px;
+      border-radius: 4px;
+      transition: color 0.15s, background 0.15s;
+      font-family: inherit;
+    }
+    .btn-del:hover { color: #e74c3c; background: rgba(231,76,60,0.08); }
 
     #status {
       position: fixed; top: 1.5rem; right: 1.5rem;
@@ -89,13 +105,13 @@
     /* ── History ── */
     #history-section { width: 100%; max-width: 700px; margin: 0 auto; padding: 0 1.5rem 5rem; }
 
-    .history-header {
+    .section-divider {
       display: flex; align-items: center; justify-content: space-between;
       border-top: 1px solid rgba(0,0,0,0.1); padding-top: 2rem; margin-bottom: 1rem;
     }
-    @media (prefers-color-scheme: dark) { .history-header { border-color: rgba(255,255,255,0.1); } }
+    @media (prefers-color-scheme: dark) { .section-divider { border-color: rgba(255,255,255,0.1); } }
 
-    .history-title { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: #888; }
+    .section-label { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: #888; }
 
     #total-row {
       display: flex; align-items: center; justify-content: space-between;
@@ -108,11 +124,14 @@
     .total-right { display: flex; align-items: center; gap: 14px; }
 
     .run-row {
-      display: grid; grid-template-columns: 2rem 1fr auto;
-      gap: 0 1.5rem; align-items: center; padding: 0.6rem 0;
+      display: grid;
+      grid-template-columns: 2rem 1fr auto auto;
+      gap: 0 1rem;
+      align-items: center;
+      padding: 0.55rem 0;
       border-bottom: 1px solid rgba(0,0,0,0.05);
       font-size: clamp(0.8rem, 2vw, 1rem);
-      animation: fadeIn 0.25s ease;
+      animation: fadeIn 0.2s ease;
     }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; } }
     @media (prefers-color-scheme: dark) { .run-row { border-color: rgba(255,255,255,0.05); } }
@@ -122,6 +141,62 @@
     .run-duration { font-size: clamp(0.9rem, 2.5vw, 1.15rem); text-align: right; white-space: nowrap; }
 
     #empty-msg { display: none; font-size: 13px; color: #aaa; letter-spacing: 0.05em; padding: 1.2rem 0 0.5rem; }
+
+    /* ── Manual entry ── */
+    #manual-section { margin-top: 1rem; }
+
+    .manual-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr) auto;
+      gap: 10px;
+      align-items: end;
+      margin-top: 1rem;
+    }
+
+    .manual-field { display: flex; flex-direction: column; gap: 5px; }
+
+    .manual-field label {
+      font-size: 10px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: #aaa;
+    }
+
+    .manual-field input {
+      font-family: inherit;
+      font-size: clamp(0.85rem, 2vw, 1rem);
+      padding: 8px 10px;
+      border-radius: 6px;
+      border: 1.5px solid rgba(0,0,0,0.15);
+      background: transparent;
+      color: #111111;
+      width: 100%;
+      text-align: center;
+      outline: none;
+      transition: border-color 0.15s;
+      -moz-appearance: textfield;
+    }
+    .manual-field input::-webkit-outer-spin-button,
+    .manual-field input::-webkit-inner-spin-button { -webkit-appearance: none; }
+    .manual-field input:focus { border-color: #111111; }
+
+    @media (prefers-color-scheme: dark) {
+      .manual-field input { border-color: rgba(255,255,255,0.15); color: #eeeeee; }
+      .manual-field input:focus { border-color: #eeeeee; }
+    }
+
+    #manual-error {
+      font-size: 11px;
+      color: #e74c3c;
+      margin-top: 8px;
+      min-height: 16px;
+      letter-spacing: 0.03em;
+    }
+
+    @media (max-width: 480px) {
+      .manual-grid { grid-template-columns: repeat(3, 1fr); }
+      .manual-grid .btn.add { grid-column: 1 / -1; width: 100%; }
+    }
   </style>
 </head>
 <body>
@@ -137,8 +212,10 @@
   </div>
 
   <div id="history-section">
-    <div class="history-header">
-      <span class="history-title">Run History</span>
+
+    <!-- Run history -->
+    <div class="section-divider">
+      <span class="section-label">Run History</span>
     </div>
     <div id="total-row">
       <span class="total-label">Total Runtime</span>
@@ -149,6 +226,30 @@
     </div>
     <div id="run-list"></div>
     <div id="empty-msg">No data to show.</div>
+
+    <!-- Manual entry -->
+    <div id="manual-section">
+      <div class="section-divider" style="margin-top:2rem">
+        <span class="section-label">Add Time Manually</span>
+      </div>
+      <div class="manual-grid">
+        <div class="manual-field">
+          <label>Hours</label>
+          <input type="number" id="m-hours" min="0" max="99" placeholder="00" />
+        </div>
+        <div class="manual-field">
+          <label>Minutes</label>
+          <input type="number" id="m-minutes" min="0" max="59" placeholder="00" />
+        </div>
+        <div class="manual-field">
+          <label>Seconds</label>
+          <input type="number" id="m-seconds" min="0" max="59" placeholder="00" />
+        </div>
+        <button class="btn add" id="addManual">Add</button>
+      </div>
+      <div id="manual-error"></div>
+    </div>
+
   </div>
 
   <script>
@@ -166,6 +267,11 @@
     const clearAllBtn  = document.getElementById('clearAll');
     const emptyMsg     = document.getElementById('empty-msg');
     const totalRow     = document.getElementById('total-row');
+    const addManualBtn = document.getElementById('addManual');
+    const mHours       = document.getElementById('m-hours');
+    const mMinutes     = document.getElementById('m-minutes');
+    const mSeconds     = document.getElementById('m-seconds');
+    const manualError  = document.getElementById('manual-error');
 
     const pad = n => String(n).padStart(2, '0');
 
@@ -191,22 +297,44 @@
 
     function renderHistory() {
       runList.innerHTML = '';
+
       if (runs.length === 0) {
         totalRow.style.display = 'none';
         emptyMsg.style.display = 'block';
         return;
       }
+
       totalRow.style.display = '';
       emptyMsg.style.display = 'none';
       totalTimeEl.textContent = fmt(runs.reduce((s, r) => s + r.ms, 0));
+
       [...runs].reverse().forEach((r, i) => {
+        const realIdx = runs.length - 1 - i; // index in original array
+        const displayIdx = runs.length - i;
+
         const row = document.createElement('div');
         row.className = 'run-row';
+
+        const rangeStr = r.manual
+          ? `<span style="color:#aaa;font-size:0.8em;letter-spacing:0.05em">manually added</span>`
+          : `${fmtDate(r.start)} ${fmtTime(r.start)} → ${fmtTime(r.end)}`;
+
         row.innerHTML = `
-          <span class="run-index">#${runs.length - i}</span>
-          <span class="run-range">${fmtDate(r.start)} ${fmtTime(r.start)} → ${fmtTime(r.end)}</span>
-          <span class="run-duration">${fmt(r.ms)}</span>`;
+          <span class="run-index">#${displayIdx}</span>
+          <span class="run-range">${rangeStr}</span>
+          <span class="run-duration">${fmt(r.ms)}</span>
+          <button class="btn-del" data-idx="${realIdx}" title="Remove">✕</button>
+        `;
         runList.appendChild(row);
+      });
+
+      // bind delete buttons
+      runList.querySelectorAll('.btn-del').forEach(btn => {
+        btn.addEventListener('click', () => {
+          runs.splice(Number(btn.dataset.idx), 1);
+          saveRuns();
+          renderHistory();
+        });
       });
     }
 
@@ -237,7 +365,7 @@
       if (elapsed === 0) return;
       const endDate   = new Date();
       const startDate = new Date(endDate.getTime() - elapsed);
-      runs.push({ start: startDate, end: endDate, ms: elapsed });
+      runs.push({ start: startDate, end: endDate, ms: elapsed, manual: false });
       saveRuns();
       running = false;
       clearInterval(interval);
@@ -255,15 +383,45 @@
       renderHistory();
     });
 
-    // Native browser close warning — only fires when stopwatch is running
-    window.addEventListener('beforeunload', e => {
-      if (running) {
-        e.preventDefault();
-        e.returnValue = '';
+    // ── Manual add ──
+    addManualBtn.addEventListener('click', () => {
+      manualError.textContent = '';
+      const h = parseInt(mHours.value)   || 0;
+      const m = parseInt(mMinutes.value) || 0;
+      const s = parseInt(mSeconds.value) || 0;
+
+      if (h === 0 && m === 0 && s === 0) {
+        manualError.textContent = 'Please enter a time greater than zero.';
+        return;
       }
+      if (m > 59 || s > 59) {
+        manualError.textContent = 'Minutes and seconds must be between 0 and 59.';
+        return;
+      }
+
+      const ms = (h * 3600 + m * 60 + s) * 1000;
+      runs.push({ start: new Date(), end: new Date(), ms, manual: true });
+      saveRuns();
+      renderHistory();
+
+      mHours.value = '';
+      mMinutes.value = '';
+      mSeconds.value = '';
+    });
+
+    // allow Enter key in manual inputs
+    [mHours, mMinutes, mSeconds].forEach(inp => {
+      inp.addEventListener('keydown', e => { if (e.code === 'Enter') addManualBtn.click(); });
+    });
+
+    window.addEventListener('beforeunload', e => {
+      if (running) { e.preventDefault(); e.returnValue = ''; }
     });
 
     document.addEventListener('keydown', e => {
+      const active = document.activeElement;
+      const typing = active && (active.tagName === 'INPUT');
+      if (typing) return;
       if (e.code === 'Space') { e.preventDefault(); startStopBtn.click(); }
       if (e.code === 'KeyR')  resetBtn.click();
     });
