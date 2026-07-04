@@ -1,433 +1,891 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>00:00:00 — TrackTime</title>
-  <link rel="icon" href="https://www.svgrepo.com/show/520498/clock.svg" type="image/x-icon">
-  <style>
-    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mock Test Control Room</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Zilla+Slab:wght@400;600;700&family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink: #101a2b;
+    --ink-2: #16233a;
+    --paper: #f4f1e6;
+    --paper-dim: #cfc9b4;
+    --amber: #e0a339;
+    --red: #d1533e;
+    --green: #4f9d72;
+    --line: rgba(244,241,230,0.14);
+    --mono: 'JetBrains Mono', monospace;
+    --slab: 'Zilla Slab', serif;
+    --sans: 'Inter', sans-serif;
+  }
 
-    body {
-      min-height: 100vh;
-      background: #ffffff;
-      color: #111111;
-      font-family: 'Courier New', Courier, monospace;
-      overflow-x: hidden;
-    }
-    @media (prefers-color-scheme: dark) {
-      body { background: #0f0f0f; color: #eeeeee; }
-    }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
 
-    #sw {
-      width: 100%;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      position: relative;
-      padding: 1rem;
-    }
+  body{
+    background:
+      radial-gradient(circle at 15% -10%, rgba(224,163,57,0.08), transparent 40%),
+      var(--ink);
+    color: var(--paper);
+    font-family: var(--sans);
+    min-height:100vh;
+    padding: 40px 20px 80px;
+  }
 
-    #time {
-      font-size: clamp(3rem, 16vw, 12rem);
-      font-weight: 400;
-      letter-spacing: -0.02em;
-      line-height: 1;
-      text-align: center;
-      width: 100%;
-      white-space: nowrap;
-    }
+  .wrap{
+    max-width: 1080px;
+    margin: 0 auto;
+  }
 
-    #controls { display: flex; gap: 16px; margin-top: 2.5rem; }
+  /* ---------- Header ---------- */
+  header{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-end;
+    flex-wrap:wrap;
+    gap:16px;
+    border-bottom: 1px dashed var(--line);
+    padding-bottom: 24px;
+    margin-bottom: 36px;
+  }
 
-    .btn {
-      font-family: inherit;
-      font-size: 13px;
-      font-weight: 500;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      padding: 10px 28px;
-      border-radius: 8px;
-      cursor: pointer;
-      transition: background 0.15s, transform 0.1s, opacity 0.15s;
-      min-width: 100px;
-    }
-    .btn:active { transform: scale(0.97); }
+  .eyebrow{
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--amber);
+    margin: 0 0 10px;
+  }
 
-    .btn.primary { background: #111111; color: #ffffff; border: 1px solid #111111; }
-    .btn.primary:hover { opacity: 0.75; }
-    .btn.secondary { background: transparent; color: #111111; border: 1.5px solid #111111; }
-    .btn.secondary:hover { background: rgba(0,0,0,0.06); }
-    .btn.ghost { background: transparent; color: #888; border: 1.5px solid #cccccc; min-width: auto; padding: 5px 14px; font-size: 11px; }
-    .btn.ghost:hover { background: rgba(0,0,0,0.04); color: #111; }
-    .btn.add { background: #111111; color: #fff; border: 1px solid #111111; min-width: auto; padding: 8px 20px; font-size: 12px; }
-    .btn.add:hover { opacity: 0.75; }
+  h1{
+    font-family: var(--slab);
+    font-weight:700;
+    font-size: clamp(28px, 4vw, 44px);
+    margin: 0;
+    letter-spacing: -0.01em;
+  }
 
-    @media (prefers-color-scheme: dark) {
-      .btn.primary { background: #eeeeee; color: #0f0f0f; border-color: #eeeeee; }
-      .btn.primary:hover { opacity: 0.8; }
-      .btn.secondary { color: #eeeeee; border-color: #eeeeee; }
-      .btn.secondary:hover { background: rgba(255,255,255,0.08); }
-      .btn.ghost { color: #666; border-color: #333; }
-      .btn.ghost:hover { background: rgba(255,255,255,0.05); color: #eee; }
-      .btn.add { background: #eeeeee; color: #0f0f0f; border-color: #eeeeee; }
-    }
+  .admit-no{
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--paper-dim);
+    text-align:right;
+    line-height:1.6;
+  }
+  .admit-no span{color:var(--paper);}
 
-    /* delete row btn */
-    .btn-del {
-      background: none;
-      border: none;
-      cursor: pointer;
-      color: #ccc;
-      font-size: 15px;
-      line-height: 1;
-      padding: 2px 4px;
-      border-radius: 4px;
-      transition: color 0.15s, background 0.15s;
-      font-family: inherit;
-    }
-    .btn-del:hover { color: #e74c3c; background: rgba(231,76,60,0.08); }
+  /* ---------- Grid of subject slips ---------- */
+  .grid{
+    display:grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 22px;
+    margin-bottom: 44px;
+  }
 
-    #status {
-      position: fixed; top: 1.5rem; right: 1.5rem;
-      width: 8px; height: 8px; border-radius: 50%;
-      background: rgba(0,0,0,0.15); transition: background 0.3s;
-    }
-    @media (prefers-color-scheme: dark) { #status { background: rgba(255,255,255,0.15); } }
-    #status.running { background: #1D9E75; }
+  .slip{
+    position:relative;
+    background: var(--ink-2);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 22px 20px 20px;
+    overflow:hidden;
+  }
 
-    #hint {
-      position: fixed; bottom: 1.5rem; left: 50%; transform: translateX(-50%);
-      font-size: 12px; letter-spacing: 0.06em; color: #aaaaaa; white-space: nowrap;
-    }
+  .slip::before{
+    /* perforated edge */
+    content:"";
+    position:absolute;
+    left:0; right:0; bottom:52px;
+    height:0;
+    border-bottom: 2px dashed rgba(244,241,230,0.18);
+  }
 
-    /* ── History ── */
-    #history-section { width: 100%; max-width: 700px; margin: 0 auto; padding: 0 1.5rem 5rem; }
+  .slip-top{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    margin-bottom: 18px;
+  }
 
-    .section-divider {
-      display: flex; align-items: center; justify-content: space-between;
-      border-top: 1px solid rgba(0,0,0,0.1); padding-top: 2rem; margin-bottom: 1rem;
-    }
-    @media (prefers-color-scheme: dark) { .section-divider { border-color: rgba(255,255,255,0.1); } }
+  .code{
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    color: var(--ink);
+    background: var(--paper-dim);
+    padding: 3px 8px;
+    border-radius: 3px;
+    font-weight:600;
+  }
 
-    .section-label { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: #888; }
+  .subject{
+    font-family: var(--slab);
+    font-size: 20px;
+    font-weight: 600;
+    margin: 8px 0 2px;
+  }
 
-    #total-row {
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 0.75rem 0; border-bottom: 1px solid rgba(0,0,0,0.08); margin-bottom: 0.5rem;
-    }
-    @media (prefers-color-scheme: dark) { #total-row { border-color: rgba(255,255,255,0.08); } }
+  .allotted{
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--paper-dim);
+  }
 
-    .total-label { font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: #888; }
-    #total-time { font-size: clamp(1.2rem, 3vw, 1.8rem); font-weight: 400; letter-spacing: -0.01em; }
-    .total-right { display: flex; align-items: center; gap: 14px; }
+  .status-dot{
+    width:8px; height:8px; border-radius:50%;
+    background: var(--paper-dim);
+    margin-top: 6px;
+  }
+  .status-dot.running{ background: var(--amber); box-shadow:0 0 8px var(--amber); animation: pulse 1.4s infinite; }
+  .status-dot.done{ background: var(--red); }
+  .status-dot.complete{ background: var(--green); }
 
-    .run-row {
-      display: grid;
-      grid-template-columns: 2rem 1fr auto auto;
-      gap: 0 1rem;
-      align-items: center;
-      padding: 0.55rem 0;
-      border-bottom: 1px solid rgba(0,0,0,0.05);
-      font-size: clamp(0.8rem, 2vw, 1rem);
-      animation: fadeIn 0.2s ease;
-    }
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; } }
-    @media (prefers-color-scheme: dark) { .run-row { border-color: rgba(255,255,255,0.05); } }
+  @keyframes pulse{
+    0%,100%{ opacity:1; }
+    50%{ opacity:0.35; }
+  }
 
-    .run-index { color: #aaa; font-size: 11px; text-align: right; }
-    .run-range { color: #888; font-size: 0.85em; }
-    .run-duration { font-size: clamp(0.9rem, 2.5vw, 1.15rem); text-align: right; white-space: nowrap; }
+  .digits{
+    font-family: var(--mono);
+    font-size: clamp(34px, 5vw, 42px);
+    font-weight: 500;
+    letter-spacing: 0.02em;
+    margin: 6px 0 16px;
+    font-variant-numeric: tabular-nums;
+  }
+  .digits.warn{ color: var(--red); }
+  .digits.finished{ color: var(--red); }
 
-    #empty-msg { display: none; font-size: 13px; color: #aaa; letter-spacing: 0.05em; padding: 1.2rem 0 0.5rem; }
+  .bar-track{
+    height: 5px;
+    background: rgba(244,241,230,0.12);
+    border-radius: 3px;
+    overflow:hidden;
+    margin-bottom: 18px;
+  }
+  .bar-fill{
+    height:100%;
+    width:0%;
+    background: linear-gradient(90deg, var(--amber), var(--red));
+    border-radius: 3px;
+    transition: width 0.4s linear;
+  }
+  .bar-fill.complete{ background: var(--green); }
 
-    /* ── Manual entry ── */
-    #manual-section { margin-top: 1rem; }
+  .controls{
+    display:flex;
+    gap:8px;
+  }
 
-    .manual-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr) auto;
-      gap: 10px;
-      align-items: end;
-      margin-top: 1rem;
-    }
+  button{
+    font-family: var(--sans);
+    font-size: 12.5px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    padding: 9px 14px;
+    border-radius: 3px;
+    border: 1px solid var(--line);
+    background: transparent;
+    color: var(--paper);
+    cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
+  }
+  button:hover{ background: rgba(244,241,230,0.08); }
+  button:active{ transform: scale(0.97); }
 
-    .manual-field { display: flex; flex-direction: column; gap: 5px; }
+  button.primary{
+    background: var(--amber);
+    color: var(--ink);
+    border-color: var(--amber);
+  }
+  button.primary:hover{ background:#eeb455; }
 
-    .manual-field label {
-      font-size: 10px;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-      color: #aaa;
-    }
+  button:disabled{
+    opacity: 0.35;
+    cursor: not-allowed;
+  }
 
-    .manual-field input {
-      font-family: inherit;
-      font-size: clamp(0.85rem, 2vw, 1rem);
-      padding: 8px 10px;
-      border-radius: 6px;
-      border: 1.5px solid rgba(0,0,0,0.15);
-      background: transparent;
-      color: #111111;
-      width: 100%;
-      text-align: center;
-      outline: none;
-      transition: border-color 0.15s;
-      -moz-appearance: textfield;
-    }
-    .manual-field input::-webkit-outer-spin-button,
-    .manual-field input::-webkit-inner-spin-button { -webkit-appearance: none; }
-    .manual-field input:focus { border-color: #111111; }
+  .spent{
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--paper-dim);
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px dashed var(--line);
+  }
+  .spent span{ color: var(--amber); font-weight:600; }
 
-    @media (prefers-color-scheme: dark) {
-      .manual-field input { border-color: rgba(255,255,255,0.15); color: #eeeeee; }
-      .manual-field input:focus { border-color: #eeeeee; }
-    }
+  /* Stopwatch slip gets a slightly different accent */
+  .slip.stopwatch .code{ background: var(--paper); }
+  .slip.stopwatch .digits{ color: var(--paper); }
 
-    #manual-error {
-      font-size: 11px;
-      color: #e74c3c;
-      margin-top: 8px;
-      min-height: 16px;
-      letter-spacing: 0.03em;
-    }
+  /* ---------- Ledger / total ---------- */
+  .ledger{
+    background: var(--paper);
+    color: var(--ink);
+    border-radius: 6px;
+    padding: 28px 30px;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.35);
+  }
 
-    @media (max-width: 480px) {
-      .manual-grid { grid-template-columns: repeat(3, 1fr); }
-      .manual-grid .btn.add { grid-column: 1 / -1; width: 100%; }
-    }
-  </style>
+  .ledger-head{
+    display:flex;
+    justify-content:space-between;
+    align-items:baseline;
+    border-bottom: 1px solid rgba(16,26,43,0.15);
+    padding-bottom: 14px;
+    margin-bottom: 16px;
+    flex-wrap:wrap;
+    gap:10px;
+  }
+
+  .ledger-head h2{
+    font-family: var(--slab);
+    font-size: 19px;
+    margin:0;
+    font-weight:700;
+  }
+
+  .ledger-total{
+    font-family: var(--mono);
+    font-size: clamp(26px,4vw,34px);
+    font-weight:700;
+    color: var(--ink);
+  }
+  .ledger-total .label{
+    font-family: var(--sans);
+    font-size: 11px;
+    font-weight:600;
+    letter-spacing:0.08em;
+    text-transform:uppercase;
+    color: rgba(16,26,43,0.55);
+    display:block;
+    margin-bottom:4px;
+  }
+
+  table{
+    width:100%;
+    border-collapse:collapse;
+    font-family: var(--mono);
+    font-size: 13px;
+  }
+  th{
+    text-align:left;
+    font-family: var(--sans);
+    font-size: 11px;
+    text-transform:uppercase;
+    letter-spacing:0.06em;
+    color: rgba(16,26,43,0.5);
+    font-weight:600;
+    padding-bottom: 8px;
+    border-bottom: 1px solid rgba(16,26,43,0.12);
+  }
+  td{
+    padding: 9px 0;
+    border-bottom: 1px dotted rgba(16,26,43,0.15);
+  }
+  tr:last-child td{ border-bottom:none; }
+  td.row-label{ font-family: var(--sans); font-weight:600; }
+  td.num{ text-align:right; }
+
+  /* ---------- Calendar ---------- */
+  .calendar-card{
+    background: var(--paper);
+    color: var(--ink);
+    border-radius: 6px;
+    padding: 28px 30px;
+    margin-top: 26px;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.35);
+  }
+
+  .cal-head{
+    display:flex;
+    justify-content:space-between;
+    align-items:baseline;
+    border-bottom: 1px solid rgba(16,26,43,0.15);
+    padding-bottom: 14px;
+    margin-bottom: 18px;
+    flex-wrap:wrap;
+    gap:10px;
+  }
+  .cal-head h2{
+    font-family: var(--slab);
+    font-size: 19px;
+    margin:0;
+    font-weight:700;
+  }
+  .cal-month{
+    font-family: var(--mono);
+    font-size: 12px;
+    color: rgba(16,26,43,0.6);
+  }
+
+  .cal-grid{
+    display:grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 6px;
+  }
+
+  .cal-dow{
+    font-family: var(--sans);
+    font-size: 10.5px;
+    font-weight:600;
+    text-transform:uppercase;
+    letter-spacing:0.05em;
+    color: rgba(16,26,43,0.45);
+    text-align:center;
+    padding-bottom: 6px;
+  }
+
+  .cal-cell{
+    aspect-ratio: 1 / 1;
+    border-radius: 4px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight:600;
+    color: var(--ink);
+    background: rgba(16,26,43,0.05);
+    position:relative;
+  }
+  .cal-cell.empty{ background:transparent; }
+
+  .cal-cell.lvl-light{ background:#bfe3c4; color:#1c3d22; }
+  .cal-cell.lvl-mid{ background:#5fb679; color:#0f2513; }
+  .cal-cell.lvl-high{ background:#1f7a41; color:#eaf6ec; }
+
+  .cal-cell.is-today{ box-shadow: inset 0 0 0 2px var(--ink); }
+
+  .cal-legend{
+    display:flex;
+    flex-wrap:wrap;
+    gap:16px;
+    margin-top: 18px;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: rgba(16,26,43,0.65);
+  }
+  .cal-legend .swatch{
+    display:inline-block;
+    width:11px; height:11px;
+    border-radius:2px;
+    margin-right:6px;
+    vertical-align:-1px;
+  }
+  .swatch.lvl-light{ background:#bfe3c4; }
+  .swatch.lvl-mid{ background:#5fb679; }
+  .swatch.lvl-high{ background:#1f7a41; }
+  .swatch.lvl-none{ background: rgba(16,26,43,0.08); }
+
+  footer{
+    text-align:center;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--paper-dim);
+    margin-top: 40px;
+    letter-spacing: 0.04em;
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    .status-dot.running{ animation:none; }
+    .bar-fill{ transition:none; }
+  }
+</style>
 </head>
 <body>
 
-  <div id="sw">
-    <div id="status"></div>
-    <div id="time">00:00:00</div>
-    <div id="controls">
-      <button class="btn primary" id="startStop">Start</button>
-      <button class="btn secondary" id="reset">Reset</button>
+<div class="wrap">
+
+  <header>
+    <div>
+      <p class="eyebrow">Mock Test &middot; Sectional Timers</p>
+      <h1>Control Room</h1>
     </div>
-    <div id="hint">space — start / pause &nbsp;&nbsp; r — reset</div>
+    <div class="admit-no">
+      SESSION DATE: <span id="today"></span><br>
+      TOTAL SECTIONS: <span>04</span> + STOPWATCH
+    </div>
+  </header>
+
+  <div class="grid" id="grid">
+    <!-- English -->
+    <div class="slip" data-key="english">
+      <div class="slip-top">
+        <div>
+          <span class="code">ENG&nbsp;&middot;&nbsp;01</span>
+          <div class="subject">English</div>
+          <div class="allotted">Allotted 02:30:00</div>
+        </div>
+        <div class="status-dot" data-role="dot"></div>
+      </div>
+      <div class="digits" data-role="digits">02:30:00</div>
+      <div class="bar-track"><div class="bar-fill" data-role="bar"></div></div>
+      <div class="controls">
+        <button class="primary" data-action="start">Start</button>
+        <button data-action="pause" disabled>Pause</button>
+        <button data-action="reset">Reset</button>
+      </div>
+      <div class="spent">Time spent: <span data-role="spent">00:00:00</span></div>
+    </div>
+
+    <!-- Quant -->
+    <div class="slip" data-key="quant">
+      <div class="slip-top">
+        <div>
+          <span class="code">QNT&nbsp;&middot;&nbsp;02</span>
+          <div class="subject">Quant</div>
+          <div class="allotted">Allotted 03:00:00</div>
+        </div>
+        <div class="status-dot" data-role="dot"></div>
+      </div>
+      <div class="digits" data-role="digits">03:00:00</div>
+      <div class="bar-track"><div class="bar-fill" data-role="bar"></div></div>
+      <div class="controls">
+        <button class="primary" data-action="start">Start</button>
+        <button data-action="pause" disabled>Pause</button>
+        <button data-action="reset">Reset</button>
+      </div>
+      <div class="spent">Time spent: <span data-role="spent">00:00:00</span></div>
+    </div>
+
+    <!-- GA -->
+    <div class="slip" data-key="ga">
+      <div class="slip-top">
+        <div>
+          <span class="code">GA&nbsp;&middot;&nbsp;03</span>
+          <div class="subject">General Awareness</div>
+          <div class="allotted">Allotted 01:30:00</div>
+        </div>
+        <div class="status-dot" data-role="dot"></div>
+      </div>
+      <div class="digits" data-role="digits">01:30:00</div>
+      <div class="bar-track"><div class="bar-fill" data-role="bar"></div></div>
+      <div class="controls">
+        <button class="primary" data-action="start">Start</button>
+        <button data-action="pause" disabled>Pause</button>
+        <button data-action="reset">Reset</button>
+      </div>
+      <div class="spent">Time spent: <span data-role="spent">00:00:00</span></div>
+    </div>
+
+    <!-- Reasoning -->
+    <div class="slip" data-key="reasoning">
+      <div class="slip-top">
+        <div>
+          <span class="code">REA&nbsp;&middot;&nbsp;04</span>
+          <div class="subject">Reasoning</div>
+          <div class="allotted">Allotted 02:00:00</div>
+        </div>
+        <div class="status-dot" data-role="dot"></div>
+      </div>
+      <div class="digits" data-role="digits">02:00:00</div>
+      <div class="bar-track"><div class="bar-fill" data-role="bar"></div></div>
+      <div class="controls">
+        <button class="primary" data-action="start">Start</button>
+        <button data-action="pause" disabled>Pause</button>
+        <button data-action="reset">Reset</button>
+      </div>
+      <div class="spent">Time spent: <span data-role="spent">00:00:00</span></div>
+    </div>
+
+    <!-- Stopwatch -->
+    <div class="slip stopwatch" data-key="stopwatch">
+      <div class="slip-top">
+        <div>
+          <span class="code">SW&nbsp;&middot;&nbsp;00</span>
+          <div class="subject">Stopwatch</div>
+          <div class="allotted">Counts up &middot; no limit</div>
+        </div>
+        <div class="status-dot" data-role="dot"></div>
+      </div>
+      <div class="digits" data-role="digits">00:00:00</div>
+      <div class="bar-track"><div class="bar-fill" data-role="bar" style="background:linear-gradient(90deg,#8aa1c9,var(--paper));width:0%"></div></div>
+      <div class="controls">
+        <button class="primary" data-action="start">Start</button>
+        <button data-action="pause" disabled>Pause</button>
+        <button data-action="reset">Reset</button>
+      </div>
+      <div class="spent">Time spent: <span data-role="spent">00:00:00</span></div>
+    </div>
   </div>
 
-  <div id="history-section">
-
-    <!-- Run history -->
-    <div class="section-divider">
-      <span class="section-label">Run History</span>
-    </div>
-    <div id="total-row">
-      <span class="total-label">Total Runtime</span>
-      <div class="total-right">
-        <div id="total-time">00:00:00</div>
-        <button class="btn ghost" id="clearAll">Clear all</button>
+  <div class="ledger">
+    <div class="ledger-head">
+      <h2>Today's Total — All Sections</h2>
+      <div style="display:flex; align-items:center; gap:18px;">
+        <div class="ledger-total">
+          <span class="label">Today's total</span>
+          <span id="grandTotal">00:00:00</span>
+        </div>
+        <button id="clearSession" style="border-color:rgba(16,26,43,0.25); color:var(--ink);">End day &amp; reset</button>
       </div>
     </div>
-    <div id="run-list"></div>
-    <div id="empty-msg">No data to show.</div>
-
-    <!-- Manual entry -->
-    <div id="manual-section">
-      <div class="section-divider" style="margin-top:2rem">
-        <span class="section-label">Add Time Manually</span>
-      </div>
-      <div class="manual-grid">
-        <div class="manual-field">
-          <label>Hours</label>
-          <input type="number" id="m-hours" min="0" max="99" placeholder="00" />
-        </div>
-        <div class="manual-field">
-          <label>Minutes</label>
-          <input type="number" id="m-minutes" min="0" max="59" placeholder="00" />
-        </div>
-        <div class="manual-field">
-          <label>Seconds</label>
-          <input type="number" id="m-seconds" min="0" max="59" placeholder="00" />
-        </div>
-        <button class="btn add" id="addManual">Add</button>
-      </div>
-      <div id="manual-error"></div>
-    </div>
-
+    <table>
+      <thead>
+        <tr><th>Section</th><th style="text-align:right">Time spent</th></tr>
+      </thead>
+      <tbody id="ledgerBody">
+        <!-- filled by JS -->
+      </tbody>
+    </table>
   </div>
 
-  <script>
-    const STORAGE_KEY = 'stopwatch_runs';
+  <div class="calendar-card">
+    <div class="cal-head">
+      <h2>Study Calendar</h2>
+      <span class="cal-month" id="calMonthLabel"></span>
+    </div>
+    <div class="cal-grid" id="calGrid">
+      <!-- filled by JS -->
+    </div>
+    <div class="cal-legend">
+      <span><span class="swatch lvl-none"></span>No data / 0h</span>
+      <span><span class="swatch lvl-light"></span>Under 6h</span>
+      <span><span class="swatch lvl-mid"></span>6h – 10h</span>
+      <span><span class="swatch lvl-high"></span>Over 10h</span>
+    </div>
+  </div>
 
-    let running = false, startTime = 0, elapsed = 0, interval = null;
-    let runs = loadRuns();
+  <footer>Progress is saved to this browser automatically &middot; hit "End day &amp; reset" to log today's total to the calendar and start fresh</footer>
+</div>
 
-    const timeEl       = document.getElementById('time');
-    const startStopBtn = document.getElementById('startStop');
-    const resetBtn     = document.getElementById('reset');
-    const statusDot    = document.getElementById('status');
-    const runList      = document.getElementById('run-list');
-    const totalTimeEl  = document.getElementById('total-time');
-    const clearAllBtn  = document.getElementById('clearAll');
-    const emptyMsg     = document.getElementById('empty-msg');
-    const totalRow     = document.getElementById('total-row');
-    const addManualBtn = document.getElementById('addManual');
-    const mHours       = document.getElementById('m-hours');
-    const mMinutes     = document.getElementById('m-minutes');
-    const mSeconds     = document.getElementById('m-seconds');
-    const manualError  = document.getElementById('manual-error');
+<script>
+(function(){
+  const SECTION_LABELS = {
+    english: "English",
+    quant: "Quant",
+    ga: "General Awareness",
+    reasoning: "Reasoning",
+    stopwatch: "Stopwatch"
+  };
 
-    const pad = n => String(n).padStart(2, '0');
+  // duration in seconds for countdown timers; stopwatch has no duration (counts up)
+  const CONFIG = {
+    english:   { duration: 2.5 * 3600, mode: "countdown" },
+    quant:     { duration: 3   * 3600, mode: "countdown" },
+    ga:        { duration: 1.5 * 3600, mode: "countdown" },
+    reasoning: { duration: 2   * 3600, mode: "countdown" },
+    stopwatch: { duration: 0,          mode: "stopwatch" }
+  };
 
-    function fmt(ms) {
-      const t = Math.floor(ms / 1000);
-      return `${pad(Math.floor(t/3600))}:${pad(Math.floor(t/60)%60)}:${pad(t%60)}`;
+  const STORAGE_KEY = 'examControlRoomState_v1';
+  const HISTORY_KEY = 'examControlRoomHistory_v1';
+  const LAST_DATE_KEY = 'examControlRoomLastDate_v1';
+
+  function todayStr(d){
+    d = d || new Date();
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  }
+
+  function loadHistory(){
+    try{
+      const raw = localStorage.getItem(HISTORY_KEY);
+      return raw ? JSON.parse(raw) : {};
+    }catch(e){
+      console.warn('Could not load history:', e);
+      return {};
     }
-    function fmtTime(d) { return `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`; }
-    function fmtDate(d) { return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }); }
+  }
 
-    function loadRuns() {
-      try {
-        const raw = localStorage.getItem(STORAGE_KEY);
-        if (!raw) return [];
-        return JSON.parse(raw).map(r => ({ ...r, start: new Date(r.start), end: new Date(r.end) }));
-      } catch { return []; }
+  function saveHistory(history){
+    try{
+      localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+    }catch(e){
+      console.warn('Could not save history:', e);
     }
+  }
 
-    function saveRuns() {
-      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(runs)); }
-      catch(e) { console.warn('localStorage unavailable:', e); }
-    }
+  let history = loadHistory();
 
-    function renderHistory() {
-      runList.innerHTML = '';
+  function currentGrandTotal(){
+    return Object.values(state).reduce((sum, s) => sum + s.elapsed, 0);
+  }
 
-      if (runs.length === 0) {
-        totalRow.style.display = 'none';
-        emptyMsg.style.display = 'block';
-        return;
+  // If the app was left open/loaded on a new calendar day, archive yesterday's
+  // total into history and reset today's counters to zero.
+  function handleDayRollover(){
+    const last = localStorage.getItem(LAST_DATE_KEY);
+    const today = todayStr();
+    if(last && last !== today){
+      const carriedOver = currentGrandTotal();
+      if(carriedOver > 0){
+        history[last] = (history[last] || 0) + carriedOver;
+        saveHistory(history);
       }
-
-      totalRow.style.display = '';
-      emptyMsg.style.display = 'none';
-      totalTimeEl.textContent = fmt(runs.reduce((s, r) => s + r.ms, 0));
-
-      [...runs].reverse().forEach((r, i) => {
-        const realIdx = runs.length - 1 - i; // index in original array
-        const displayIdx = runs.length - i;
-
-        const row = document.createElement('div');
-        row.className = 'run-row';
-
-        const rangeStr = r.manual
-          ? `<span style="color:#aaa;font-size:0.8em;letter-spacing:0.05em">manually added</span>`
-          : `${fmtDate(r.start)} ${fmtTime(r.start)} → ${fmtTime(r.end)}`;
-
-        row.innerHTML = `
-          <span class="run-index">#${displayIdx}</span>
-          <span class="run-range">${rangeStr}</span>
-          <span class="run-duration">${fmt(r.ms)}</span>
-          <button class="btn-del" data-idx="${realIdx}" title="Remove">✕</button>
-        `;
-        runList.appendChild(row);
-      });
-
-      // bind delete buttons
-      runList.querySelectorAll('.btn-del').forEach(btn => {
-        btn.addEventListener('click', () => {
-          runs.splice(Number(btn.dataset.idx), 1);
-          saveRuns();
-          renderHistory();
-        });
+      Object.keys(state).forEach(key => {
+        state[key].remaining = state[key].duration;
+        state[key].elapsed = 0;
+        state[key].finished = false;
       });
     }
+    localStorage.setItem(LAST_DATE_KEY, today);
+  }
 
-    function update() {
-      elapsed = Date.now() - startTime;
-      const t = fmt(elapsed);
-      timeEl.textContent = t;
-      document.title = t + ' — Stopwatch';
+  const state = {};
+  Object.keys(CONFIG).forEach(key => {
+    state[key] = {
+      mode: CONFIG[key].mode,
+      duration: CONFIG[key].duration,
+      remaining: CONFIG[key].duration,   // for countdown
+      elapsed: 0,                        // for stopwatch AND to track "time spent" on countdowns
+      running: false,
+      finished: false,
+      intervalId: null
+    };
+  });
+
+  function saveState(){
+    try{
+      const toSave = {};
+      Object.keys(state).forEach(key => {
+        toSave[key] = {
+          remaining: state[key].remaining,
+          elapsed: state[key].elapsed,
+          finished: state[key].finished
+        };
+      });
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(toSave));
+    }catch(e){
+      // storage unavailable (e.g. private browsing, or sandboxed preview) - fail silently
+      console.warn('Could not save session:', e);
     }
+  }
 
-    startStopBtn.addEventListener('click', () => {
-      if (!running) {
-        startTime = Date.now() - elapsed;
-        running   = true;
-        startStopBtn.textContent = 'Pause';
-        statusDot.classList.add('running');
-        interval = setInterval(update, 500);
-        update();
+  function loadState(){
+    try{
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if(!raw) return;
+      const saved = JSON.parse(raw);
+      Object.keys(saved).forEach(key => {
+        if(!state[key]) return;
+        state[key].remaining = saved[key].remaining;
+        state[key].elapsed = saved[key].elapsed;
+        state[key].finished = saved[key].finished;
+      });
+    }catch(e){
+      console.warn('Could not load saved session:', e);
+    }
+  }
+
+  function fmt(totalSeconds){
+    totalSeconds = Math.max(0, Math.round(totalSeconds));
+    const h = Math.floor(totalSeconds / 3600);
+    const m = Math.floor((totalSeconds % 3600) / 60);
+    const s = totalSeconds % 60;
+    return [h,m,s].map(n => String(n).padStart(2,'0')).join(':');
+  }
+
+  function el(key, role){
+    return document.querySelector(`.slip[data-key="${key}"] [data-role="${role}"]`);
+  }
+  function slipEl(key){
+    return document.querySelector(`.slip[data-key="${key}"]`);
+  }
+
+  function render(key){
+    const s = state[key];
+    const digitsEl = el(key, 'digits');
+    const barEl = el(key, 'bar');
+    const dotEl = el(key, 'dot');
+    const spentEl = el(key, 'spent');
+    const slip = slipEl(key);
+    const startBtn = slip.querySelector('[data-action="start"]');
+    const pauseBtn = slip.querySelector('[data-action="pause"]');
+
+    if(s.mode === 'countdown'){
+      digitsEl.textContent = fmt(s.remaining);
+      const pct = 100 * (1 - s.remaining / s.duration);
+      barEl.style.width = pct + '%';
+
+      digitsEl.classList.toggle('warn', s.remaining > 0 && s.remaining <= 300 && !s.finished);
+      digitsEl.classList.toggle('finished', s.finished);
+      barEl.classList.toggle('complete', s.finished);
+
+      if(s.finished){
+        dotEl.className = 'status-dot done';
+      } else if(s.running){
+        dotEl.className = 'status-dot running';
       } else {
-        running = false;
-        clearInterval(interval);
-        startStopBtn.textContent = 'Resume';
-        statusDot.classList.remove('running');
+        dotEl.className = 'status-dot';
       }
-    });
 
-    resetBtn.addEventListener('click', () => {
-      if (elapsed === 0) return;
-      const endDate   = new Date();
-      const startDate = new Date(endDate.getTime() - elapsed);
-      runs.push({ start: startDate, end: endDate, ms: elapsed, manual: false });
-      saveRuns();
-      running = false;
-      clearInterval(interval);
-      elapsed = 0;
-      timeEl.textContent       = '00:00:00';
-      startStopBtn.textContent = 'Start';
-      statusDot.classList.remove('running');
-      document.title           = '00:00:00 — Stopwatch';
-      renderHistory();
-    });
+      startBtn.disabled = s.running || s.finished;
+      pauseBtn.disabled = !s.running;
+      startBtn.textContent = s.elapsed > 0 && !s.running && !s.finished ? 'Resume' : 'Start';
+    } else {
+      // stopwatch
+      digitsEl.textContent = fmt(s.elapsed);
+      dotEl.className = s.running ? 'status-dot running' : (s.elapsed > 0 ? 'status-dot complete' : 'status-dot');
+      startBtn.disabled = s.running;
+      pauseBtn.disabled = !s.running;
+      startBtn.textContent = s.elapsed > 0 && !s.running ? 'Resume' : 'Start';
+    }
 
-    clearAllBtn.addEventListener('click', () => {
-      runs = [];
-      saveRuns();
-      renderHistory();
-    });
+    spentEl.textContent = fmt(s.elapsed);
+    renderLedger();
+    saveState();
+  }
 
-    // ── Manual add ──
-    addManualBtn.addEventListener('click', () => {
-      manualError.textContent = '';
-      const h = parseInt(mHours.value)   || 0;
-      const m = parseInt(mMinutes.value) || 0;
-      const s = parseInt(mSeconds.value) || 0;
-
-      if (h === 0 && m === 0 && s === 0) {
-        manualError.textContent = 'Please enter a time greater than zero.';
+  function tick(key){
+    const s = state[key];
+    if(s.mode === 'countdown'){
+      if(s.remaining <= 0){
+        s.remaining = 0;
+        s.finished = true;
+        stop(key);
+        render(key);
         return;
       }
-      if (m > 59 || s > 59) {
-        manualError.textContent = 'Minutes and seconds must be between 0 and 59.';
-        return;
+      s.remaining -= 1;
+      s.elapsed += 1;
+    } else {
+      s.elapsed += 1;
+    }
+    render(key);
+  }
+
+  function start(key){
+    const s = state[key];
+    if(s.running || s.finished) return;
+    s.running = true;
+    s.intervalId = setInterval(() => tick(key), 1000);
+    render(key);
+  }
+
+  function stop(key){
+    const s = state[key];
+    s.running = false;
+    if(s.intervalId){
+      clearInterval(s.intervalId);
+      s.intervalId = null;
+    }
+  }
+
+  function pause(key){
+    stop(key);
+    render(key);
+  }
+
+  function reset(key){
+    const s = state[key];
+    stop(key);
+    s.remaining = s.duration;
+    s.elapsed = 0;
+    s.finished = false;
+    render(key);
+  }
+
+  function renderLedger(){
+    const tbody = document.getElementById('ledgerBody');
+    tbody.innerHTML = '';
+    let grand = 0;
+    Object.keys(state).forEach(key => {
+      const s = state[key];
+      grand += s.elapsed;
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td class="row-label">${SECTION_LABELS[key]}</td><td class="num">${fmt(s.elapsed)}</td>`;
+      tbody.appendChild(tr);
+    });
+    document.getElementById('grandTotal').textContent = fmt(grand);
+    renderCalendar();
+  }
+
+  function levelFor(seconds){
+    const hours = seconds / 3600;
+    if(hours <= 0) return 'none';
+    if(hours > 10) return 'high';
+    if(hours >= 6) return 'mid';
+    return 'light';
+  }
+
+  function renderCalendar(){
+    const grid = document.getElementById('calGrid');
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = now.getMonth(); // 0-indexed
+    const today = todayStr(now);
+
+    document.getElementById('calMonthLabel').textContent = now.toLocaleDateString(undefined, {
+      month: 'long', year: 'numeric'
+    });
+
+    grid.innerHTML = '';
+    ['S','M','T','W','T','F','S'].forEach(d => {
+      const dow = document.createElement('div');
+      dow.className = 'cal-dow';
+      dow.textContent = d;
+      grid.appendChild(dow);
+    });
+
+    const firstDay = new Date(year, month, 1).getDay();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+    for(let i = 0; i < firstDay; i++){
+      const blank = document.createElement('div');
+      blank.className = 'cal-cell empty';
+      grid.appendChild(blank);
+    }
+
+    for(let day = 1; day <= daysInMonth; day++){
+      const dateStr = `${year}-${String(month+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+      let seconds = history[dateStr] || 0;
+      if(dateStr === today){
+        seconds += currentGrandTotal();
       }
+      const level = levelFor(seconds);
+      const cell = document.createElement('div');
+      cell.className = 'cal-cell' + (level !== 'none' ? ` lvl-${level}` : '') + (dateStr === today ? ' is-today' : '');
+      cell.textContent = day;
+      cell.title = `${dateStr} — ${fmt(seconds)} studied`;
+      grid.appendChild(cell);
+    }
+  }
 
-      const ms = (h * 3600 + m * 60 + s) * 1000;
-      runs.push({ start: new Date(), end: new Date(), ms, manual: true });
-      saveRuns();
-      renderHistory();
+  document.querySelectorAll('.slip').forEach(slip => {
+    const key = slip.getAttribute('data-key');
+    slip.querySelector('[data-action="start"]').addEventListener('click', () => start(key));
+    slip.querySelector('[data-action="pause"]').addEventListener('click', () => pause(key));
+    slip.querySelector('[data-action="reset"]').addEventListener('click', () => reset(key));
+  });
 
-      mHours.value = '';
-      mMinutes.value = '';
-      mSeconds.value = '';
-    });
+  document.getElementById('today').textContent = new Date().toLocaleDateString(undefined, {
+    year:'numeric', month:'short', day:'2-digit'
+  });
 
-    // allow Enter key in manual inputs
-    [mHours, mMinutes, mSeconds].forEach(inp => {
-      inp.addEventListener('keydown', e => { if (e.code === 'Enter') addManualBtn.click(); });
-    });
+  loadState();
+  handleDayRollover();
+  saveState();
+  Object.keys(state).forEach(render);
 
-    window.addEventListener('beforeunload', e => {
-      if (running) { e.preventDefault(); e.returnValue = ''; }
-    });
+  window.addEventListener('beforeunload', function(e){
+    const anyRunning = Object.values(state).some(s => s.running);
+    if(anyRunning){
+      e.preventDefault();
+      e.returnValue = 'A timer is still running. Leave anyway?';
+      return e.returnValue;
+    }
+  });
 
-    document.addEventListener('keydown', e => {
-      const active = document.activeElement;
-      const typing = active && (active.tagName === 'INPUT');
-      if (typing) return;
-      if (e.code === 'Space') { e.preventDefault(); startStopBtn.click(); }
-      if (e.code === 'KeyR')  resetBtn.click();
-    });
+  document.getElementById('clearSession').addEventListener('click', () => {
+    if(!confirm("Log today's total to the calendar and reset all timers to zero?")) return;
+    const today = todayStr();
+    const total = currentGrandTotal();
+    if(total > 0){
+      history[today] = (history[today] || 0) + total;
+      saveHistory(history);
+    }
+    Object.keys(state).forEach(key => reset(key));
+  });
+})();
+</script>
 
-    renderHistory();
-  </script>
 </body>
 </html>
