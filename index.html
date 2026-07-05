@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Mock Test Control Room</title>
+  <link rel="icon" href="https://www.svgrepo.com/show/520498/clock.svg" type="image/x-icon">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Zilla+Slab:wght@400;600;700&family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
@@ -142,6 +143,8 @@
   .status-dot.running{ background: var(--amber); box-shadow:0 0 8px var(--amber); animation: pulse 1.4s infinite; }
   .status-dot.done{ background: var(--red); }
   .status-dot.complete{ background: var(--green); }
+  .status-dot.over{ background: var(--red); }
+  .status-dot.over.pulse{ box-shadow: 0 0 8px var(--red); animation: pulse 1.4s infinite; }
 
   @keyframes pulse{
     0%,100%{ opacity:1; }
@@ -174,6 +177,7 @@
     transition: width 0.4s linear;
   }
   .bar-fill.complete{ background: var(--green); }
+  .bar-fill.overtime{ background: var(--red); }
 
   .controls{
     display:flex;
@@ -424,7 +428,7 @@
 
   <header>
     <div>
-      <p class="eyebrow">Mock Test &middot; Sectional Timers</p>
+      <p class="eyebrow">PAIN IS TEMPORARY &middot; PRIDE IS FOREVER</p>
       <h1>Control Room</h1>
     </div>
     <div class="admit-no">
@@ -444,7 +448,7 @@
         </div>
         <div class="status-dot" data-role="dot"></div>
       </div>
-      <div class="digits" data-role="digits">02:30:00</div>
+      <div class="digits" data-role="digits">00:00:00</div>
       <div class="bar-track"><div class="bar-fill" data-role="bar"></div></div>
       <div class="controls">
         <button class="primary" data-action="start">Start</button>
@@ -464,7 +468,7 @@
         </div>
         <div class="status-dot" data-role="dot"></div>
       </div>
-      <div class="digits" data-role="digits">03:00:00</div>
+      <div class="digits" data-role="digits">00:00:00</div>
       <div class="bar-track"><div class="bar-fill" data-role="bar"></div></div>
       <div class="controls">
         <button class="primary" data-action="start">Start</button>
@@ -484,7 +488,7 @@
         </div>
         <div class="status-dot" data-role="dot"></div>
       </div>
-      <div class="digits" data-role="digits">01:30:00</div>
+      <div class="digits" data-role="digits">00:00:00</div>
       <div class="bar-track"><div class="bar-fill" data-role="bar"></div></div>
       <div class="controls">
         <button class="primary" data-action="start">Start</button>
@@ -504,7 +508,7 @@
         </div>
         <div class="status-dot" data-role="dot"></div>
       </div>
-      <div class="digits" data-role="digits">02:00:00</div>
+      <div class="digits" data-role="digits">00:00:00</div>
       <div class="bar-track"><div class="bar-fill" data-role="bar"></div></div>
       <div class="controls">
         <button class="primary" data-action="start">Start</button>
@@ -591,11 +595,11 @@
 
   // duration in seconds for countdown timers; stopwatch has no duration (counts up)
   const CONFIG = {
-    english:   { duration: 2.5 * 3600, mode: "countdown" },
-    quant:     { duration: 3   * 3600, mode: "countdown" },
-    ga:        { duration: 1.5 * 3600, mode: "countdown" },
-    reasoning: { duration: 2   * 3600, mode: "countdown" },
-    stopwatch: { duration: 0,          mode: "stopwatch" }
+    english:   { target: 2.5 * 3600 },
+    quant:     { target: 3   * 3600 },
+    ga:        { target: 1.5 * 3600 },
+    reasoning: { target: 2   * 3600 },
+    stopwatch: { target: null }   // no target - counts up with no limit
   };
 
   const STORAGE_KEY = 'examControlRoomState_v1';
@@ -648,7 +652,6 @@
       Object.keys(state).forEach(key => {
         state[key].accumulated = 0;
         state[key].startTimestamp = null;
-        state[key].finished = false;
       });
     }
     localStorage.setItem(LAST_DATE_KEY, today);
@@ -657,12 +660,10 @@
   const state = {};
   Object.keys(CONFIG).forEach(key => {
     state[key] = {
-      mode: CONFIG[key].mode,
-      duration: CONFIG[key].duration,
-      accumulated: 0,      // elapsed seconds banked from completed run segments
-      startTimestamp: null, // Date.now() when the current run segment started (null if paused)
+      target: CONFIG[key].target,    // seconds, or null for the plain stopwatch
+      accumulated: 0,                 // elapsed seconds banked from completed run segments
+      startTimestamp: null,           // Date.now() when the current run segment started (null if paused)
       running: false,
-      finished: false,
       intervalId: null
     };
   });
@@ -671,31 +672,22 @@
   // every time it's read, so throttled/skipped setInterval ticks (which happen
   // in background tabs) never cause drift. Whenever this IS read, it reflects
   // the real elapsed time even if the tab was backgrounded for minutes.
+  // All 5 blocks are plain stopwatches - they count up with no cap, even past
+  // their target allotment (they just flag as "overtime" visually).
   function getElapsed(key){
     const s = state[key];
     let e = s.accumulated;
     if(s.running && s.startTimestamp){
       e += (Date.now() - s.startTimestamp) / 1000;
     }
-    if(s.mode === 'countdown'){
-      e = Math.min(e, s.duration);
-    }
     return e;
-  }
-
-  function getRemaining(key){
-    const s = state[key];
-    return Math.max(0, s.duration - getElapsed(key));
   }
 
   function saveState(){
     try{
       const toSave = {};
       Object.keys(state).forEach(key => {
-        toSave[key] = {
-          elapsed: getElapsed(key),
-          finished: state[key].finished
-        };
+        toSave[key] = { elapsed: getElapsed(key) };
       });
       localStorage.setItem(STORAGE_KEY, JSON.stringify(toSave));
     }catch(e){
@@ -712,7 +704,6 @@
       Object.keys(saved).forEach(key => {
         if(!state[key]) return;
         state[key].accumulated = saved[key].elapsed || 0;
-        state[key].finished = saved[key].finished;
       });
     }catch(e){
       console.warn('Could not load saved session:', e);
@@ -745,68 +736,51 @@
     const startBtn = slip.querySelector('[data-action="start"]');
     const pauseBtn = slip.querySelector('[data-action="pause"]');
 
-    if(s.mode === 'countdown'){
-      const remaining = getRemaining(key);
-      digitsEl.textContent = fmt(remaining);
-      const pct = 100 * (1 - remaining / s.duration);
+    digitsEl.textContent = fmt(elapsed);
+
+    if(s.target){
+      // Progress bar fills up as the stopwatch approaches its allotted time.
+      const pct = Math.min(100, (elapsed / s.target) * 100);
       barEl.style.width = pct + '%';
+      const over = elapsed >= s.target;
 
-      digitsEl.classList.toggle('warn', remaining > 0 && remaining <= 300 && !s.finished);
-      digitsEl.classList.toggle('finished', s.finished);
-      barEl.classList.toggle('complete', s.finished);
+      digitsEl.classList.toggle('warn', !over && (s.target - elapsed) <= 300);
+      digitsEl.classList.toggle('finished', over);
+      barEl.classList.toggle('overtime', over);
 
-      if(s.finished){
-        dotEl.className = 'status-dot done';
+      if(over){
+        dotEl.className = 'status-dot over' + (s.running ? ' pulse' : '');
       } else if(s.running){
         dotEl.className = 'status-dot running';
       } else {
         dotEl.className = 'status-dot';
       }
-
-      startBtn.disabled = s.running || s.finished;
-      pauseBtn.disabled = !s.running;
-      startBtn.textContent = elapsed > 0 && !s.running && !s.finished ? 'Resume' : 'Start';
     } else {
-      // stopwatch
-      digitsEl.textContent = fmt(elapsed);
+      // Plain stopwatch - no target, so no bar fill / overtime state.
       dotEl.className = s.running ? 'status-dot running' : (elapsed > 0 ? 'status-dot complete' : 'status-dot');
-      startBtn.disabled = s.running;
-      pauseBtn.disabled = !s.running;
-      startBtn.textContent = elapsed > 0 && !s.running ? 'Resume' : 'Start';
     }
+
+    startBtn.disabled = s.running;
+    pauseBtn.disabled = !s.running;
+    startBtn.textContent = elapsed > 0 && !s.running ? 'Resume' : 'Start';
 
     spentEl.textContent = fmt(elapsed);
     renderLedger();
     saveState();
   }
 
-  function checkFinish(key){
-    const s = state[key];
-    if(s.mode === 'countdown' && !s.finished && getElapsed(key) >= s.duration){
-      s.accumulated = s.duration;
-      s.running = false;
-      s.startTimestamp = null;
-      s.finished = true;
-      if(s.intervalId){
-        clearInterval(s.intervalId);
-        s.intervalId = null;
-      }
-    }
-  }
-
   function tick(key){
-    checkFinish(key);
     render(key);
   }
 
   function start(key){
     const s = state[key];
-    if(s.running || s.finished) return;
+    if(s.running) return;
     s.running = true;
     s.startTimestamp = Date.now();
     // Interval just triggers a re-render; the actual time value is always
-    // computed from real timestamps (getElapsed/getRemaining), so if the
-    // browser throttles/skips ticks in a background tab, the display simply
+    // computed from real timestamps (getElapsed), so if the browser
+    // throttles/skips ticks in a background tab, the display simply
     // "catches up" to the correct value the next time it fires - it never
     // stops counting in the background.
     s.intervalId = setInterval(() => tick(key), 250);
@@ -833,9 +807,7 @@
 
   function reset(key){
     stop(key);
-    const s = state[key];
-    s.accumulated = 0;
-    s.finished = false;
+    state[key].accumulated = 0;
     render(key);
   }
 
@@ -933,10 +905,7 @@
   // next (possibly throttled) interval tick.
   document.addEventListener('visibilitychange', () => {
     if(document.visibilityState === 'visible'){
-      Object.keys(state).forEach(key => {
-        if(state[key].running) checkFinish(key);
-        render(key);
-      });
+      Object.keys(state).forEach(key => render(key));
     }
   });
 
