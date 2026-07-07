@@ -223,8 +223,43 @@
   .spent span{ color: var(--amber); font-weight:600; }
 
   /* Stopwatch slip gets a slightly different accent */
-  .slip.stopwatch .code{ background: var(--paper); }
-  .slip.stopwatch .digits{ color: var(--paper); }
+  .slip.addtime .digits{ color: var(--amber); }
+
+  .add-time-inputs{
+    display:flex;
+    gap: 14px;
+    margin: 4px 0 16px;
+  }
+  .add-time-inputs label{
+    display:flex;
+    flex-direction:column;
+    gap: 5px;
+    font-family: var(--sans);
+    font-size: 11px;
+    font-weight:600;
+    letter-spacing:0.04em;
+    text-transform:uppercase;
+    color: var(--paper-dim);
+  }
+  .add-time-inputs input{
+    width: 72px;
+    font-family: var(--mono);
+    font-size: 16px;
+    padding: 8px 10px;
+    border-radius: 3px;
+    border: 1px solid var(--line);
+    background: rgba(244,241,230,0.06);
+    color: var(--paper);
+  }
+  .add-time-inputs input:focus{
+    outline: none;
+    border-color: var(--amber);
+  }
+  /* remove native spinner clutter, keep it clean like a form field */
+  .add-time-inputs input::-webkit-outer-spin-button,
+  .add-time-inputs input::-webkit-inner-spin-button{
+    opacity: 1;
+  }
 
   /* ---------- Ledger / total ---------- */
   .ledger{
@@ -518,24 +553,32 @@
       <div class="spent">Time spent: <span data-role="spent">00:00:00</span></div>
     </div>
 
-    <!-- Stopwatch -->
-    <div class="slip stopwatch" data-key="stopwatch">
+    <!-- Add Time -->
+    <div class="slip addtime" data-key="extra">
       <div class="slip-top">
         <div>
-          <span class="code">SW&nbsp;&middot;&nbsp;00</span>
-          <div class="subject">Stopwatch</div>
-          <div class="allotted">Counts up &middot; no limit</div>
+          <span class="code">EXT&nbsp;&middot;&nbsp;00</span>
+          <div class="subject">Add Time</div>
+          <div class="allotted">Manually add to today's total</div>
         </div>
         <div class="status-dot" data-role="dot"></div>
       </div>
       <div class="digits" data-role="digits">00:00:00</div>
-      <div class="bar-track"><div class="bar-fill" data-role="bar" style="background:linear-gradient(90deg,#8aa1c9,var(--paper));width:0%"></div></div>
-      <div class="controls">
-        <button class="primary" data-action="start">Start</button>
-        <button data-action="pause" disabled>Pause</button>
-        <button data-action="reset">Reset</button>
+      <div class="add-time-inputs">
+        <label>
+          <span>Hours</span>
+          <input type="number" id="extraHours" min="0" max="23" value="0" inputmode="numeric">
+        </label>
+        <label>
+          <span>Minutes</span>
+          <input type="number" id="extraMinutes" min="0" max="59" value="0" inputmode="numeric">
+        </label>
       </div>
-      <div class="spent">Time spent: <span data-role="spent">00:00:00</span></div>
+      <div class="controls">
+        <button class="primary" data-action="add-extra">Add</button>
+        <button data-action="clear-extra">Clear</button>
+      </div>
+      <div class="spent">Added today: <span data-role="spent">00:00:00</span></div>
     </div>
   </div>
 
@@ -590,16 +633,17 @@
     quant: "Quant",
     ga: "General Awareness",
     reasoning: "Reasoning",
-    stopwatch: "Stopwatch"
+    extra: "Extra Time (manual)"
   };
 
-  // duration in seconds for countdown timers; stopwatch has no duration (counts up)
+  // duration in seconds for countdown timers; the 'extra' block has no target,
+  // it's just a manually-added bucket of time (no start/pause/running).
   const CONFIG = {
     english:   { target: 2.5 * 3600 },
     quant:     { target: 2.5 * 3600 },
     ga:        { target: 1.5 * 3600 },
     reasoning: { target: 2   * 3600 },
-    stopwatch: { target: null }   // no target - counts up with no limit
+    extra:     { target: null }
   };
 
   const STORAGE_KEY = 'examControlRoomState_v1';
@@ -726,6 +770,13 @@
   }
 
   function render(key){
+    if(key === 'extra'){
+      renderExtra();
+      renderLedger();
+      saveState();
+      return;
+    }
+
     const s = state[key];
     const elapsed = getElapsed(key);
     const digitsEl = el(key, 'digits');
@@ -767,6 +818,32 @@
     spentEl.textContent = fmt(elapsed);
     renderLedger();
     saveState();
+  }
+
+  function renderExtra(){
+    const elapsed = getElapsed('extra');
+    el('extra', 'digits').textContent = fmt(elapsed);
+    el('extra', 'spent').textContent = fmt(elapsed);
+    el('extra', 'dot').className = elapsed > 0 ? 'status-dot complete' : 'status-dot';
+  }
+
+  function addExtra(){
+    const hoursInput = document.getElementById('extraHours');
+    const minsInput = document.getElementById('extraMinutes');
+    const hours = Math.max(0, parseFloat(hoursInput.value) || 0);
+    const mins = Math.max(0, parseFloat(minsInput.value) || 0);
+    const secondsToAdd = hours * 3600 + mins * 60;
+    if(secondsToAdd > 0){
+      state.extra.accumulated += secondsToAdd;
+      hoursInput.value = 0;
+      minsInput.value = 0;
+      render('extra');
+    }
+  }
+
+  function clearExtra(){
+    state.extra.accumulated = 0;
+    render('extra');
   }
 
   function tick(key){
@@ -886,10 +963,14 @@
 
   document.querySelectorAll('.slip').forEach(slip => {
     const key = slip.getAttribute('data-key');
+    if(key === 'extra') return; // wired separately below
     slip.querySelector('[data-action="start"]').addEventListener('click', () => start(key));
     slip.querySelector('[data-action="pause"]').addEventListener('click', () => pause(key));
     slip.querySelector('[data-action="reset"]').addEventListener('click', () => reset(key));
   });
+
+  document.querySelector('[data-key="extra"] [data-action="add-extra"]').addEventListener('click', addExtra);
+  document.querySelector('[data-key="extra"] [data-action="clear-extra"]').addEventListener('click', clearExtra);
 
   document.getElementById('today').textContent = new Date().toLocaleDateString(undefined, {
     year:'numeric', month:'short', day:'2-digit'
