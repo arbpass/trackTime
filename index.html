@@ -493,33 +493,13 @@
       <div class="spent">Time spent: <span data-role="spent">00:00:00</span></div>
     </div>
 
-    <!-- Quant -->
-    <div class="slip" data-key="quant">
-      <div class="slip-top">
-        <div>
-          <span class="code">QNT&nbsp;&middot;&nbsp;02</span>
-          <div class="subject">Quant</div>
-          <div class="allotted">Allotted 02:30:00</div>
-        </div>
-        <div class="status-dot" data-role="dot"></div>
-      </div>
-      <div class="digits" data-role="digits">00:00:00</div>
-      <div class="bar-track"><div class="bar-fill" data-role="bar"></div></div>
-      <div class="controls">
-        <button class="primary" data-action="start">Start</button>
-        <button data-action="pause" disabled>Pause</button>
-        <button data-action="reset">Reset</button>
-      </div>
-      <div class="spent">Time spent: <span data-role="spent">00:00:00</span></div>
-    </div>
-
     <!-- GA -->
     <div class="slip" data-key="ga">
       <div class="slip-top">
         <div>
-          <span class="code">GA&nbsp;&middot;&nbsp;03</span>
+          <span class="code">GA&nbsp;&middot;&nbsp;02</span>
           <div class="subject">General Awareness</div>
-          <div class="allotted">Allotted 01:30:00</div>
+          <div class="allotted">Allotted 02:00:00</div>
         </div>
         <div class="status-dot" data-role="dot"></div>
       </div>
@@ -537,8 +517,28 @@
     <div class="slip" data-key="reasoning">
       <div class="slip-top">
         <div>
-          <span class="code">REA&nbsp;&middot;&nbsp;04</span>
+          <span class="code">REA&nbsp;&middot;&nbsp;03</span>
           <div class="subject">Reasoning</div>
+          <div class="allotted">Allotted 02:00:00</div>
+        </div>
+        <div class="status-dot" data-role="dot"></div>
+      </div>
+      <div class="digits" data-role="digits">00:00:00</div>
+      <div class="bar-track"><div class="bar-fill" data-role="bar"></div></div>
+      <div class="controls">
+        <button class="primary" data-action="start">Start</button>
+        <button data-action="pause" disabled>Pause</button>
+        <button data-action="reset">Reset</button>
+      </div>
+      <div class="spent">Time spent: <span data-role="spent">00:00:00</span></div>
+    </div>
+
+    <!-- Quant -->
+    <div class="slip" data-key="quant">
+      <div class="slip-top">
+        <div>
+          <span class="code">QNT&nbsp;&middot;&nbsp;04</span>
+          <div class="subject">Quant</div>
           <div class="allotted">Allotted 02:00:00</div>
         </div>
         <div class="status-dot" data-role="dot"></div>
@@ -630,9 +630,9 @@
 (function(){
   const SECTION_LABELS = {
     english: "English",
-    quant: "Quant",
     ga: "General Awareness",
     reasoning: "Reasoning",
+    quant: "Quant",
     extra: "Extra Time (manual)"
   };
 
@@ -640,9 +640,9 @@
   // it's just a manually-added bucket of time (no start/pause/running).
   const CONFIG = {
     english:   { target: 2.5 * 3600 },
-    quant:     { target: 2.5 * 3600 },
-    ga:        { target: 1.5 * 3600 },
+    ga:        { target: 2   * 3600 },
     reasoning: { target: 2   * 3600 },
+    quant:     { target: 2   * 3600 },
     extra:     { target: null }
   };
 
